@@ -1,0 +1,11 @@
+# Binary files
+bin/
+go-cli-monitor
+
+# Dependencies (better to store them in go.mod/go.sum)
+vendor/
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
