@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+const (
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorCyan   = "\033[36m"
+)
+
 func main() {
 	// Args
 	args := os.Args[1:]
@@ -27,10 +35,10 @@ func main() {
 		hostname, err := os.Hostname()
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Println("Hostname: [NOT FOUND]")
+				fmt.Printf("Hostname: %s[NOT FOUND]%s\n", colorRed, colorReset)
 				return
 			} else {
-				fmt.Printf("Error getting hostname: %v\n", err)
+				fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
 			}
 
 			return
@@ -61,7 +69,7 @@ func clearScreen() {
 	cmd.Stdout = os.Stdout
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error clearing screen: %v\n", err)
+		fmt.Printf("Error clearing screen: %s%v%s\n", colorRed, err, colorReset)
 	}
 }
 
@@ -74,20 +82,20 @@ func checkNetwork(url string) {
 	// Make request
 	resp, err := client.Get(url)
 	if err != nil {
-		fmt.Printf("Network [DOWN] (Error: %v)\n", err)
+		fmt.Printf("Network: \t%s[DOWN]%s (Error: %v)\n", colorRed, colorReset, err)
 		return
 	}
 
 	defer resp.Body.Close()
 
-	fmt.Printf("Network: [UP] (Status: %s)\n", resp.Status)
+	fmt.Printf("Network: \t%s[UP]%s (Status: %s)\n", colorGreen, colorReset, resp.Status)
 }
 
 func checkPath(path string) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		fmt.Printf("Path '%s': [NOT FOUND]\n", path)
+		fmt.Printf("Path '%s': \t%s[NOT FOUND]%s\n", path, colorRed, colorReset)
 	} else {
-		fmt.Printf("Path '%s': [EXISTS]\n", path)
+		fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
 	}
 }
