@@ -4,39 +4,64 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 )
 
 func main() {
-	fmt.Println("=== System Monitor ===")
-
-	// Hostname
-	hostname, err := os.Hostname()
-	if err != nil {
-		if os.IsNotExist(err) {
-			fmt.Println("Hostname: [NOT FOUND]")
-			return
-		} else {
-			fmt.Printf("Error getting hostname: %v\n", err)
-		}
-
-		return
-	}
-
-	fmt.Printf("Hostname: \t%s\n", hostname)
-
-	// Network check
-	checkNetwork("https://google.com")
-
-	// User ID and username
-	fmt.Printf("User ID: \t%d\n", os.Getuid())
-
 	// Args
 	args := os.Args[1:]
 	if len(args) > 0 {
 		checkPath(args[0])
 	} else {
 		fmt.Println("\nNo arguments provided.")
+	}
+
+	for {
+		clearScreen()
+
+		fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
+
+		// Hostname
+		hostname, err := os.Hostname()
+		if err != nil {
+			if os.IsNotExist(err) {
+				fmt.Println("Hostname: [NOT FOUND]")
+				return
+			} else {
+				fmt.Printf("Error getting hostname: %v\n", err)
+			}
+
+			return
+		}
+
+		fmt.Printf("Hostname: \t%s\n", hostname)
+
+		// Network check
+		checkNetwork("https://google.com")
+
+		// User ID and username
+		fmt.Printf("User ID: \t%d\n", os.Getuid())
+
+		time.Sleep(5 * time.Second)
+	}
+
+}
+
+func clearScreen() {
+	var cmd *exec.Cmd
+
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+
+	cmd.Stdout = os.Stdout
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error clearing screen: %v\n", err)
 	}
 }
 
