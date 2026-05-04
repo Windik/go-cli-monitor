@@ -1,12 +1,15 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
+
+	"github.com/getlantern/systray"
 )
 
 const (
@@ -17,6 +20,12 @@ const (
 	colorCyan   = "\033[36m"
 )
 
+//go:embed green_circle_icon_32.png
+var iconGreen []byte
+
+//go:embed red_circle_icon_32.png
+var iconRed []byte
+
 func main() {
 	// Args
 	args := os.Args[1:]
@@ -26,29 +35,57 @@ func main() {
 		fmt.Println("\nNo arguments provided.")
 	}
 
-	for {
-		clearScreen()
+	systray.Run(onReady, onExit)
+}
 
-		fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
+func onReady() {
+	systray.SetIcon(iconGreen)
+	systray.SetTitle("")
+	systray.SetTooltip("System Monitor: checking network")
 
-		// Hostname
-		hostname, err := os.Hostname()
-		if err != nil {
-			fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
-			return
+	mQuit := systray.AddMenuItem("Quit", "Close application")
+
+	go func() {
+		for {
+			clearScreen()
+
+			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
+
+			// Hostname
+			hostname, err := os.Hostname()
+			if err != nil {
+				fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
+				return
+			}
+
+			fmt.Printf("Hostname: \t%s\n", hostname)
+
+			// Network check
+			isOnline := checkNetworkAndReturn("https://google.com")
+
+			if isOnline {
+				systray.SetIcon(iconGreen)
+				systray.SetTooltip("Network: UP")
+			} else {
+				systray.SetIcon(iconRed)
+				systray.SetTooltip("Network: DOWN")
+			}
+
+			// User ID and username
+			fmt.Printf("User ID: \t%d\n", os.Getuid())
+
+			time.Sleep(5 * time.Second)
 		}
+	}()
 
-		fmt.Printf("Hostname: \t%s\n", hostname)
+	go func() {
+		<-mQuit.ClickedCh
+		systray.Quit()
+	}()
+}
 
-		// Network check
-		checkNetwork("https://google.com")
-
-		// User ID and username
-		fmt.Printf("User ID: \t%d\n", os.Getuid())
-
-		time.Sleep(5 * time.Second)
-	}
-
+func onExit() {
+	fmt.Print("Applications succesfuly closed")
 }
 
 func clearScreen() {
@@ -67,7 +104,7 @@ func clearScreen() {
 	}
 }
 
-func checkNetwork(url string) {
+func checkNetworkAndReturn(url string) bool {
 	// Create client with timeout
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -77,19 +114,26 @@ func checkNetwork(url string) {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Printf("Network: \t%s[DOWN]%s (Error: %v)\n", colorRed, colorReset, err)
-		return
+		return false
 	}
 
 	defer resp.Body.Close()
 
 	fmt.Printf("Network: \t%s[UP]%s (Status: %s)\n", colorGreen, colorReset, resp.Status)
+
+	return resp.StatusCode == http.StatusOK
 }
 
 func checkPath(path string) {
 	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		fmt.Printf("Path '%s': \t%s[NOT FOUND]%s\n", path, colorRed, colorReset)
-	} else {
-		fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("Path '%s': \t%s[NOT FOUND]%s\n", path, colorRed, colorReset)
+		} else {
+			fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
+		}
+		return
 	}
+
+	fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
 }
