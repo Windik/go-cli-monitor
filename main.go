@@ -34,13 +34,7 @@ func main() {
 		// Hostname
 		hostname, err := os.Hostname()
 		if err != nil {
-			if os.IsNotExist(err) {
-				fmt.Printf("Hostname: %s[NOT FOUND]%s\n", colorRed, colorReset)
-				return
-			} else {
-				fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
-			}
-
+			fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
 			return
 		}
 
