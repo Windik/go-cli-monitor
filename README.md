@@ -27,7 +27,7 @@ A lightweight, cross-platform system monitor written in Go that lives in your sy
 
 ```/dev/null/sh#L1-4
 # Clone the repository
-git clone https://github.com/your-username/go-cli-monitor.git
+git clone https://github.com/Windik/go-cli-monitor.git
 cd go-cli-monitor
 ```
 
