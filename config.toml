@@ -1,0 +1,14 @@
+# Configuration file for go-cli-monitor
+
+# Default title for the system tray
+default_title = ""
+
+# Check interval in seconds
+check_interval = 5
+
+# Monitoring targets
+targets = [
+    "https://google.com",
+    "https://github.com",
+    "https://sample-example-not-real.ru"
+]

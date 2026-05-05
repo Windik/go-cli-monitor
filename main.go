@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"time"
 
+	"go-cli-monitor/internal/config"
+
 	"github.com/getlantern/systray"
 )
 
@@ -26,10 +28,26 @@ var iconGreen []byte
 //go:embed red_circle_icon_32.png
 var iconRed []byte
 
+//go:embed orange_circle_icon_32.png
+var iconOrange []byte
+
+var cfg *config.Config
+
 func main() {
+	var err error
+	cfg, err = config.LoadConfig()
+
+	if err != nil {
+		fmt.Printf("Error loading config: %s%v%s\n", colorRed, err, colorReset)
+		return
+	}
+
+	fmt.Printf("Config loaded: %v\n", cfg)
+	fmt.Printf("Check interval: %d\n", cfg.CheckInterval)
+	fmt.Printf("Network monitoring targets: %v\n", cfg.Targets)
+
 	// Args
-	args := os.Args[1:]
-	if len(args) > 0 {
+	if args := os.Args[1:]; len(args) > 0 {
 		checkPath(args[0])
 	} else {
 		fmt.Println("\nNo arguments provided.")
@@ -41,9 +59,12 @@ func main() {
 func onReady() {
 	if len(iconGreen) == 0 || len(iconRed) == 0 {
 		fmt.Println("Error: icon files not embed.")
+		systray.Quit()
+		return
 	}
 
 	systray.SetIcon(iconGreen)
+	systray.SetTitle(cfg.DefaultTitle)
 
 	// Hostname
 	hostname, err := os.Hostname()
@@ -76,18 +97,28 @@ func onReady() {
 			// User ID and username
 			fmt.Printf("User ID: \t%d\n", os.Getuid())
 
-			// Network check
-			isOnline := checkNetworkAndReturn("https://google.com")
+			upCount := 0
+			targetsCount := len(cfg.Targets)
 
-			if isOnline {
-				systray.SetIcon(iconGreen)
-				systray.SetTooltip("Network: UP")
-			} else {
-				systray.SetIcon(iconRed)
-				systray.SetTooltip("Network: DOWN")
+			for _, target := range cfg.Targets {
+				isUp := checkNetworkAndReturn(target)
+				if isUp {
+					upCount++
+				}
 			}
 
-			time.Sleep(5 * time.Second)
+			if upCount == targetsCount {
+				systray.SetIcon(iconGreen)
+				systray.SetTooltip(fmt.Sprintf("All %d targets are UP | Host: %s", targetsCount, hostname))
+			} else if upCount < targetsCount {
+				systray.SetIcon(iconOrange)
+				systray.SetTooltip(fmt.Sprintf("Warning: %d/%d targets UP | Host: %s", upCount, targetsCount, hostname))
+			} else {
+				systray.SetIcon(iconRed)
+				systray.SetTooltip(fmt.Sprintf("Critical: All targets are DOWN! | Host: %s", hostname))
+			}
+
+			time.Sleep(time.Duration(cfg.CheckInterval) * time.Second)
 		}
 	}()
 
@@ -126,13 +157,13 @@ func checkNetworkAndReturn(url string) bool {
 	// Make request
 	resp, err := client.Get(url)
 	if err != nil {
-		fmt.Printf("Network: \t%s[DOWN]%s (Error: %v)\n", colorRed, colorReset, err)
+		fmt.Printf("Connection for url - %s is \t%s[DOWN]%s (Error: %v)\n", url, colorRed, colorReset, err)
 		return false
 	}
 
 	defer resp.Body.Close()
 
-	fmt.Printf("Network: \t%s[UP]%s (Status: %s)\n", colorGreen, colorReset, resp.Status)
+	fmt.Printf("Connection for url - %s is \t%s[UP]%s (Status: %s)\n", url, colorGreen, colorReset, resp.Status)
 
 	return resp.StatusCode == http.StatusOK
 }
