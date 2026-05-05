@@ -22,6 +22,11 @@ const (
 	colorCyan   = "\033[36m"
 )
 
+type TargetMenuItem struct {
+	URL  string
+	Item *systray.MenuItem
+}
+
 //go:embed green_circle_icon_32.png
 var iconGreen []byte
 
@@ -84,6 +89,22 @@ func onReady() {
 
 	systray.AddSeparator()
 
+	networkMenu := systray.AddMenuItem("🌐 Network", "Network status")
+
+	var menuItems []TargetMenuItem
+
+	for _, target := range cfg.Targets {
+		subItem := networkMenu.AddSubMenuItem(fmt.Sprintf("⏳ %s", target), target)
+		subItem.Disable() // Делаем его просто информационным
+
+		menuItems = append(menuItems, TargetMenuItem{
+			URL:  target,
+			Item: subItem,
+		})
+	}
+
+	systray.AddSeparator()
+
 	mQuit := systray.AddMenuItem("❌ Quit", "Close application")
 
 	go func() {
@@ -100,10 +121,16 @@ func onReady() {
 			upCount := 0
 			targetsCount := len(cfg.Targets)
 
-			for _, target := range cfg.Targets {
-				isUp := checkNetworkAndReturn(target)
+			for _, targetItem := range menuItems {
+				isUp := checkNetworkAndReturn(targetItem.URL)
+
 				if isUp {
 					upCount++
+					// Обновляем текст в подменю (зеленый кружок-эмодзи)
+					targetItem.Item.SetTitle(fmt.Sprintf("🟢 %s", targetItem.URL))
+				} else {
+					// Обновляем текст в подменю (красный кружок-эмодзи)
+					targetItem.Item.SetTitle(fmt.Sprintf("🔴 %s", targetItem.URL))
 				}
 			}
 
