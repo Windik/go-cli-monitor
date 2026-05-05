@@ -39,11 +39,31 @@ func main() {
 }
 
 func onReady() {
-	systray.SetIcon(iconGreen)
-	systray.SetTitle("")
-	systray.SetTooltip("System Monitor: checking network")
+	if len(iconGreen) == 0 || len(iconRed) == 0 {
+		fmt.Println("Error: icon files not embed.")
+	}
 
-	mQuit := systray.AddMenuItem("Quit", "Close application")
+	systray.SetIcon(iconGreen)
+
+	// Hostname
+	hostname, err := os.Hostname()
+	uid := os.Getuid()
+
+	if err != nil {
+		fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
+		return
+	}
+
+	// Tray tooltip
+	systray.SetTooltip(fmt.Sprintf("Host: %s | User ID: %d", hostname, uid))
+
+	// Menu items with system information and disabled state
+	systray.AddMenuItem(fmt.Sprintf("💻 Host: %s", hostname), "Your PC name").Disable()
+	systray.AddMenuItem(fmt.Sprintf("👤 User ID: %d", uid), "ID текущего пользователя").Disable()
+
+	systray.AddSeparator()
+
+	mQuit := systray.AddMenuItem("❌ Quit", "Close application")
 
 	go func() {
 		for {
@@ -52,13 +72,9 @@ func onReady() {
 			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
 
 			// Hostname
-			hostname, err := os.Hostname()
-			if err != nil {
-				fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
-				return
-			}
-
 			fmt.Printf("Hostname: \t%s\n", hostname)
+			// User ID and username
+			fmt.Printf("User ID: \t%d\n", os.Getuid())
 
 			// Network check
 			isOnline := checkNetworkAndReturn("https://google.com")
@@ -70,9 +86,6 @@ func onReady() {
 				systray.SetIcon(iconRed)
 				systray.SetTooltip("Network: DOWN")
 			}
-
-			// User ID and username
-			fmt.Printf("User ID: \t%d\n", os.Getuid())
 
 			time.Sleep(5 * time.Second)
 		}
