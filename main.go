@@ -27,6 +27,11 @@ type TargetMenuItem struct {
 	Item *systray.MenuItem
 }
 
+type CheckResult struct {
+	URL  string
+	IsUp bool
+}
+
 //go:embed green_circle_icon_32.png
 var iconGreen []byte
 
@@ -121,16 +126,28 @@ func onReady() {
 			upCount := 0
 			targetsCount := len(cfg.Targets)
 
-			for _, targetItem := range menuItems {
-				isUp := checkNetworkAndReturn(targetItem.URL)
+			resultsChan := make(chan CheckResult, targetsCount)
 
-				if isUp {
-					upCount++
-					// Обновляем текст в подменю (зеленый кружок-эмодзи)
-					targetItem.Item.SetTitle(fmt.Sprintf("🟢 %s", targetItem.URL))
-				} else {
-					// Обновляем текст в подменю (красный кружок-эмодзи)
-					targetItem.Item.SetTitle(fmt.Sprintf("🔴 %s", targetItem.URL))
+			for _, targetItem := range menuItems {
+				go func(url string) {
+					isUp := checkNetworkAndReturn(targetItem.URL)
+
+					resultsChan <- CheckResult{URL: targetItem.URL, IsUp: isUp}
+				}(targetItem.URL)
+			}
+
+			for i := 0; i < targetsCount; i++ {
+				res := <-resultsChan // Read one result from channel
+
+				for _, targetItem := range menuItems {
+					if targetItem.URL == res.URL {
+						if res.IsUp {
+							upCount++
+							targetItem.Item.SetTitle(fmt.Sprintf("🟢 %s", targetItem.URL))
+						} else {
+							targetItem.Item.SetTitle(fmt.Sprintf("🔴 %s", targetItem.URL))
+						}
+					}
 				}
 			}
 
