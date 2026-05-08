@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go-cli-monitor/internal/config"
+	"go-cli-monitor/internal/logger"
 
 	"github.com/getlantern/systray"
 )
@@ -49,6 +50,10 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("Error loading config: %s%v%s\n", colorRed, err, colorReset)
+
+		errorMessage := fmt.Sprintf("Error loading config: %s", err)
+		logger.LogError(errorMessage)
+
 		return
 	}
 
@@ -68,7 +73,11 @@ func main() {
 
 func onReady() {
 	if len(iconGreen) == 0 || len(iconRed) == 0 {
-		fmt.Println("Error: icon files not embed.")
+		errorMessage := "Error: icon files not embed."
+
+		fmt.Println(errorMessage)
+		logger.LogError(errorMessage)
+
 		systray.Quit()
 		return
 	}
@@ -82,6 +91,10 @@ func onReady() {
 
 	if err != nil {
 		fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
+
+		errorMessage := fmt.Sprintf("Error getting hostname: %s", err)
+		logger.LogError(errorMessage)
+
 		return
 	}
 
@@ -189,6 +202,9 @@ func clearScreen() {
 
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Error clearing screen: %s%v%s\n", colorRed, err, colorReset)
+
+		errorMessage := fmt.Sprintf("Error clearing screen: %s", err)
+		logger.LogError(errorMessage)
 	}
 }
 
@@ -202,6 +218,10 @@ func checkNetworkAndReturn(url string) bool {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Printf("Connection for url - %s is \t%s[DOWN]%s (Error: %v)\n", url, colorRed, colorReset, err)
+
+		errorMessage := fmt.Sprintf("Connection for url - %s [DOWN] - [ERROR] %v", url, err)
+		logger.LogError(errorMessage)
+
 		return false
 	}
 
@@ -217,6 +237,9 @@ func checkPath(path string) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Printf("Path '%s': \t%s[NOT FOUND]%s\n", path, colorRed, colorReset)
+
+			errorMessage := fmt.Sprintf("Path '%s' not found. Error: %s", path, err)
+			logger.LogError(errorMessage)
 		} else {
 			fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
 		}
