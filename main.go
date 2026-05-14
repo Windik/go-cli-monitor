@@ -52,10 +52,12 @@ func main() {
 		fmt.Printf("Error loading config: %s%v%s\n", colorRed, err, colorReset)
 
 		errorMessage := fmt.Sprintf("Error loading config: %s", err)
-		logger.LogError(errorMessage)
+		logger.Log(logger.LevelError, errorMessage)
 
 		return
 	}
+
+	logger.Log(logger.LevelInfo, "Config loaded")
 
 	fmt.Printf("Config loaded: %v\n", cfg)
 	fmt.Printf("Check interval: %d\n", cfg.CheckInterval)
@@ -65,6 +67,7 @@ func main() {
 	if args := os.Args[1:]; len(args) > 0 {
 		checkPath(args[0])
 	} else {
+		logger.Log(logger.LevelInfo, "No arguments provided.")
 		fmt.Println("\nNo arguments provided.")
 	}
 
@@ -76,7 +79,7 @@ func onReady() {
 		errorMessage := "Error: icon files not embed."
 
 		fmt.Println(errorMessage)
-		logger.LogError(errorMessage)
+		logger.Log(logger.LevelError, errorMessage)
 
 		systray.Quit()
 		return
@@ -93,7 +96,7 @@ func onReady() {
 		fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
 
 		errorMessage := fmt.Sprintf("Error getting hostname: %s", err)
-		logger.LogError(errorMessage)
+		logger.Log(logger.LevelError, errorMessage)
 
 		return
 	}
@@ -143,9 +146,9 @@ func onReady() {
 
 			for _, targetItem := range menuItems {
 				go func(url string) {
-					isUp := checkNetworkAndReturn(targetItem.URL)
+					isUp := checkNetworkAndReturn(url)
 
-					resultsChan <- CheckResult{URL: targetItem.URL, IsUp: isUp}
+					resultsChan <- CheckResult{URL: url, IsUp: isUp}
 				}(targetItem.URL)
 			}
 
@@ -187,6 +190,7 @@ func onReady() {
 
 func onExit() {
 	fmt.Print("Applications succesfuly closed")
+	logger.Log(logger.LevelInfo, "Applications succesfuly closed")
 }
 
 func clearScreen() {
@@ -204,7 +208,7 @@ func clearScreen() {
 		fmt.Printf("Error clearing screen: %s%v%s\n", colorRed, err, colorReset)
 
 		errorMessage := fmt.Sprintf("Error clearing screen: %s", err)
-		logger.LogError(errorMessage)
+		logger.Log(logger.LevelError, errorMessage)
 	}
 }
 
@@ -220,7 +224,7 @@ func checkNetworkAndReturn(url string) bool {
 		fmt.Printf("Connection for url - %s is \t%s[DOWN]%s (Error: %v)\n", url, colorRed, colorReset, err)
 
 		errorMessage := fmt.Sprintf("Connection for url - %s [DOWN] - [ERROR] %v", url, err)
-		logger.LogError(errorMessage)
+		logger.Log(logger.LevelError, errorMessage)
 
 		return false
 	}
@@ -234,15 +238,16 @@ func checkNetworkAndReturn(url string) bool {
 
 func checkPath(path string) {
 	_, err := os.Stat(path)
+
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Printf("Path '%s': \t%s[NOT FOUND]%s\n", path, colorRed, colorReset)
-
-			errorMessage := fmt.Sprintf("Path '%s' not found. Error: %s", path, err)
-			logger.LogError(errorMessage)
+			logger.Log(logger.LevelError, fmt.Sprintf("Path '%s' not found: %v", path, err))
 		} else {
-			fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
+			fmt.Printf("Path '%s': \t%s[ACCESS ERROR]%s\n", path, colorRed, colorReset)
+			logger.Log(logger.LevelError, fmt.Sprintf("Path '%s' access error: %v", path, err))
 		}
+
 		return
 	}
 
