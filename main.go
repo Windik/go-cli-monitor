@@ -89,8 +89,7 @@ func onReady() {
 	systray.SetTitle(cfg.DefaultTitle)
 
 	// Hostname
-	hostname, err := os.Hostname()
-	uid := os.Getuid()
+	hostname, uid, err := getSystemInfo()
 
 	if err != nil {
 		fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
@@ -252,4 +251,11 @@ func checkPath(path string) {
 	}
 
 	fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
+}
+
+func getSystemInfo() (string, int, error) {
+	hostname, err := os.Hostname()
+	uid := os.Getuid()
+
+	return hostname, uid, err
 }
