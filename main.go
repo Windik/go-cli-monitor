@@ -262,5 +262,5 @@ func getSystemInfo() (string, int, error) {
 
 	uid := os.Getuid()
 
-	return hostname, uid, err
+	return hostname, uid, nil
 }
