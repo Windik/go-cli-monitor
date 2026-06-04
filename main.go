@@ -255,6 +255,11 @@ func checkPath(path string) {
 
 func getSystemInfo() (string, int, error) {
 	hostname, err := os.Hostname()
+
+	if err != nil {
+		return "", 0, err
+	}
+
 	uid := os.Getuid()
 
 	return hostname, uid, err
