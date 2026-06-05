@@ -60,6 +60,8 @@ func main() {
 	var err error
 	cfg, err = config.LoadConfig()
 
+	const version = "1.0.0"
+
 	if err != nil {
 		fmt.Printf("Error loading config: %s%v%s\n", colorRed, err, colorReset)
 
@@ -83,17 +85,17 @@ func main() {
 		fmt.Println("\nNo arguments provided.")
 	}
 
-	appInfo := AppInfo{
+	app := AppInfo{
 		StartTime: time.Now(),
-		Version:   "1.0.0",
+		Version:   version,
 	}
 
 	systray.Run(func() {
-		onReady(appInfo)
+		onReady(app)
 	}, onExit)
 }
 
-func onReady(appInfo AppInfo) {
+func onReady(app AppInfo) {
 	if len(iconGreen) == 0 || len(iconRed) == 0 {
 		errorMessage := "Error: icon files not embed."
 
@@ -153,9 +155,9 @@ func onReady(appInfo AppInfo) {
 
 			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
 
-			fmt.Printf("Version: \t%s\n", appInfo.Version)
-			fmt.Printf("Started: \t%s\n", appInfo.StartTime.Format("15:04:05"))
-			fmt.Printf("Uptime: \t%s\n", time.Since(appInfo.StartTime).Round(time.Second))
+			fmt.Printf("Version: \t%s\n", app.Version)
+			fmt.Printf("Started: \t%s\n", app.StartTime.Format("15:04:05"))
+			fmt.Printf("Uptime: \t%s\n", time.Since(app.StartTime).Round(time.Second))
 
 			// Hostname
 			fmt.Printf("Hostname: \t%s\n", info.Hostname)
