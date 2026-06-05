@@ -141,7 +141,7 @@ func onReady() {
 			// Hostname
 			fmt.Printf("Hostname: \t%s\n", info.Hostname)
 			// User ID and username
-			fmt.Printf("User ID: \t%d\n", os.Getuid())
+			fmt.Printf("User ID: \t%d\n", info.UID)
 
 			upCount := 0
 			targetsCount := len(cfg.Targets)
@@ -262,7 +262,7 @@ func getSystemInfo() (SystemInfo, error) {
 	hostname, err := os.Hostname()
 
 	if err != nil {
-		return SystemInfo{Hostname: "", UID: 0}, err
+		return SystemInfo{}, err
 	}
 
 	uid := os.Getuid()
