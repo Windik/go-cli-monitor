@@ -36,6 +36,13 @@ type CheckResult struct {
 type SystemInfo struct {
 	Hostname string
 	UID      int
+	OS       string
+	Arch     string
+}
+
+type AppInfo struct {
+	StartTime time.Time
+	Version   string
 }
 
 //go:embed green_circle_icon_32.png
@@ -76,10 +83,17 @@ func main() {
 		fmt.Println("\nNo arguments provided.")
 	}
 
-	systray.Run(onReady, onExit)
+	appInfo := AppInfo{
+		StartTime: time.Now(),
+		Version:   "1.0.0",
+	}
+
+	systray.Run(func() {
+		onReady(appInfo)
+	}, onExit)
 }
 
-func onReady() {
+func onReady(appInfo AppInfo) {
 	if len(iconGreen) == 0 || len(iconRed) == 0 {
 		errorMessage := "Error: icon files not embed."
 
@@ -110,7 +124,8 @@ func onReady() {
 
 	// Menu items with system information and disabled state
 	systray.AddMenuItem(fmt.Sprintf("💻 Host: %s", info.Hostname), "Your PC name").Disable()
-	systray.AddMenuItem(fmt.Sprintf("👤 User ID: %d", info.UID), "ID текущего пользователя").Disable()
+	systray.AddMenuItem(fmt.Sprintf("👤 User ID: %d", info.UID), "Current User ID").Disable()
+	systray.AddMenuItem(fmt.Sprintf("🖥️ OS: %s | Arch: %s", info.OS, info.Arch), "Operating System and Architecture").Disable()
 
 	systray.AddSeparator()
 
@@ -138,10 +153,16 @@ func onReady() {
 
 			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
 
+			fmt.Printf("Version: \t%s\n", appInfo.Version)
+			fmt.Printf("Started: \t%s\n", appInfo.StartTime.Format("15:04:05"))
+			fmt.Printf("Uptime: \t%s\n", time.Since(appInfo.StartTime).Round(time.Second))
+
 			// Hostname
 			fmt.Printf("Hostname: \t%s\n", info.Hostname)
 			// User ID and username
 			fmt.Printf("User ID: \t%d\n", info.UID)
+			// OS and Architecture
+			fmt.Printf("OS: \t%s | Arch: \t%s\n", info.OS, info.Arch)
 
 			upCount := 0
 			targetsCount := len(cfg.Targets)
@@ -267,5 +288,10 @@ func getSystemInfo() (SystemInfo, error) {
 
 	uid := os.Getuid()
 
-	return SystemInfo{Hostname: hostname, UID: uid}, nil
+	return SystemInfo{
+		Hostname: hostname,
+		UID:      uid,
+		OS:       runtime.GOOS,
+		Arch:     runtime.GOARCH,
+	}, nil
 }
