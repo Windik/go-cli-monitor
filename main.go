@@ -15,6 +15,8 @@ import (
 	"github.com/getlantern/systray"
 )
 
+const version = "1.0.0"
+
 const (
 	colorReset  = "\033[0m"
 	colorRed    = "\033[31m"
@@ -59,8 +61,6 @@ var cfg *config.Config
 func main() {
 	var err error
 	cfg, err = config.LoadConfig()
-
-	const version = "1.0.0"
 
 	if err != nil {
 		fmt.Printf("Error loading config: %s%v%s\n", colorRed, err, colorReset)
