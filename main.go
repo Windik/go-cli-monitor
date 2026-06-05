@@ -33,6 +33,11 @@ type CheckResult struct {
 	IsUp bool
 }
 
+type SystemInfo struct {
+	Hostname string
+	UID      int
+}
+
 //go:embed green_circle_icon_32.png
 var iconGreen []byte
 
@@ -89,7 +94,7 @@ func onReady() {
 	systray.SetTitle(cfg.DefaultTitle)
 
 	// Hostname
-	hostname, uid, err := getSystemInfo()
+	info, err := getSystemInfo()
 
 	if err != nil {
 		fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
@@ -101,11 +106,11 @@ func onReady() {
 	}
 
 	// Tray tooltip
-	systray.SetTooltip(fmt.Sprintf("Host: %s | User ID: %d", hostname, uid))
+	systray.SetTooltip(fmt.Sprintf("Host: %s | User ID: %d", info.Hostname, info.UID))
 
 	// Menu items with system information and disabled state
-	systray.AddMenuItem(fmt.Sprintf("💻 Host: %s", hostname), "Your PC name").Disable()
-	systray.AddMenuItem(fmt.Sprintf("👤 User ID: %d", uid), "ID текущего пользователя").Disable()
+	systray.AddMenuItem(fmt.Sprintf("💻 Host: %s", info.Hostname), "Your PC name").Disable()
+	systray.AddMenuItem(fmt.Sprintf("👤 User ID: %d", info.UID), "ID текущего пользователя").Disable()
 
 	systray.AddSeparator()
 
@@ -134,7 +139,7 @@ func onReady() {
 			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
 
 			// Hostname
-			fmt.Printf("Hostname: \t%s\n", hostname)
+			fmt.Printf("Hostname: \t%s\n", info.Hostname)
 			// User ID and username
 			fmt.Printf("User ID: \t%d\n", os.Getuid())
 
@@ -168,13 +173,13 @@ func onReady() {
 
 			if upCount == targetsCount {
 				systray.SetIcon(iconGreen)
-				systray.SetTooltip(fmt.Sprintf("All %d targets are UP | Host: %s", targetsCount, hostname))
+				systray.SetTooltip(fmt.Sprintf("All %d targets are UP | Host: %s", targetsCount, info.Hostname))
 			} else if upCount < targetsCount {
 				systray.SetIcon(iconOrange)
-				systray.SetTooltip(fmt.Sprintf("Warning: %d/%d targets UP | Host: %s", upCount, targetsCount, hostname))
+				systray.SetTooltip(fmt.Sprintf("Warning: %d/%d targets UP | Host: %s", upCount, targetsCount, info.Hostname))
 			} else {
 				systray.SetIcon(iconRed)
-				systray.SetTooltip(fmt.Sprintf("Critical: All targets are DOWN! | Host: %s", hostname))
+				systray.SetTooltip(fmt.Sprintf("Critical: All targets are DOWN! | Host: %s", info.Hostname))
 			}
 
 			time.Sleep(time.Duration(cfg.CheckInterval) * time.Second)
@@ -253,14 +258,14 @@ func checkPath(path string) {
 	fmt.Printf("Path '%s': \t%s[EXISTS]%s\n", path, colorGreen, colorReset)
 }
 
-func getSystemInfo() (string, int, error) {
+func getSystemInfo() (SystemInfo, error) {
 	hostname, err := os.Hostname()
 
 	if err != nil {
-		return "", 0, err
+		return SystemInfo{Hostname: "", UID: 0}, err
 	}
 
 	uid := os.Getuid()
 
-	return hostname, uid, nil
+	return SystemInfo{Hostname: hostname, UID: uid}, nil
 }
