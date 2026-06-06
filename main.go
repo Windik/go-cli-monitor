@@ -53,7 +53,7 @@ func (a AppInfo) Uptime() string {
 }
 
 func (a AppInfo) String() string {
-	return fmt.Sprintf("App: \t%s | Started: %s | Uptime: %s", a.Version, a.StartTime.Format("15:04:05"), a.Uptime())
+	return fmt.Sprintf("%s | Started: %s | Uptime: %s", a.Version, a.StartTime.Format("15:04:05"), a.Uptime())
 }
 
 func (s SystemInfo) Summary() string {
@@ -62,9 +62,9 @@ func (s SystemInfo) Summary() string {
 
 func (c CheckResult) StatusLabel() string {
 	if c.IsUp {
-		return "🟢" + c.URL
+		return "🟢 " + c.URL
 	}
-	return "🔴" + c.URL
+	return "🔴 " + c.URL
 }
 
 //go:embed green_circle_icon_32.png
@@ -197,6 +197,9 @@ func onReady(app AppInfo) {
 
 				for _, targetItem := range menuItems {
 					if targetItem.URL == res.URL {
+						if res.IsUp {
+							upCount++
+						}
 						targetItem.Item.SetTitle(res.StatusLabel())
 					}
 				}
