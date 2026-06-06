@@ -47,6 +47,15 @@ type AppInfo struct {
 	Version   string
 }
 
+func (a AppInfo) Uptime() string {
+	duration := time.Since(a.StartTime).Round(time.Second)
+	return duration.String()
+}
+
+func (s SystemInfo) Summary() string {
+	return fmt.Sprintf("Hostname: %s, UID: $d, OS: $s, Arch: %s", s.Hostname, s.UID, s.OS, s.Arch)
+}
+
 //go:embed green_circle_icon_32.png
 var iconGreen []byte
 
@@ -157,14 +166,9 @@ func onReady(app AppInfo) {
 
 			fmt.Printf("Version: \t%s\n", app.Version)
 			fmt.Printf("Started: \t%s\n", app.StartTime.Format("15:04:05"))
-			fmt.Printf("Uptime: \t%s\n", time.Since(app.StartTime).Round(time.Second))
+			fmt.Printf("Uptime: \t%s\n", app.Uptime())
 
-			// Hostname
-			fmt.Printf("Hostname: \t%s\n", info.Hostname)
-			// User ID and username
-			fmt.Printf("User ID: \t%d\n", info.UID)
-			// OS and Architecture
-			fmt.Printf("OS: \t%s | Arch: \t%s\n", info.OS, info.Arch)
+			fmt.Printf("System: \t%s\n", info.Summary())
 
 			upCount := 0
 			targetsCount := len(cfg.Targets)
