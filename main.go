@@ -52,8 +52,19 @@ func (a AppInfo) Uptime() string {
 	return duration.String()
 }
 
+func (a AppInfo) String() string {
+	return fmt.Sprintf("App: \t%s | Started: %s | Uptime: %s", a.Version, a.StartTime.Format("15:04:05"), a.Uptime())
+}
+
 func (s SystemInfo) Summary() string {
 	return fmt.Sprintf("Hostname: %s, UID: %d, OS: %s, Arch: %s", s.Hostname, s.UID, s.OS, s.Arch)
+}
+
+func (c CheckResult) StatusLabel() string {
+	if c.IsUp {
+		return "🟢" + c.URL
+	}
+	return "🔴" + c.URL
 }
 
 //go:embed green_circle_icon_32.png
@@ -164,9 +175,7 @@ func onReady(app AppInfo) {
 
 			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
 
-			fmt.Printf("Version: \t%s\n", app.Version)
-			fmt.Printf("Started: \t%s\n", app.StartTime.Format("15:04:05"))
-			fmt.Printf("Uptime: \t%s\n", app.Uptime())
+			fmt.Printf("App: \t\t%s\n", app.String())
 
 			fmt.Printf("System: \t%s\n", info.Summary())
 
@@ -188,12 +197,7 @@ func onReady(app AppInfo) {
 
 				for _, targetItem := range menuItems {
 					if targetItem.URL == res.URL {
-						if res.IsUp {
-							upCount++
-							targetItem.Item.SetTitle(fmt.Sprintf("🟢 %s", targetItem.URL))
-						} else {
-							targetItem.Item.SetTitle(fmt.Sprintf("🔴 %s", targetItem.URL))
-						}
+						targetItem.Item.SetTitle(res.StatusLabel())
 					}
 				}
 			}
