@@ -53,7 +53,7 @@ func (a AppInfo) Uptime() string {
 }
 
 func (s SystemInfo) Summary() string {
-	return fmt.Sprintf("Hostname: %s, UID: $d, OS: $s, Arch: %s", s.Hostname, s.UID, s.OS, s.Arch)
+	return fmt.Sprintf("Hostname: %s, UID: %d, OS: %s, Arch: %s", s.Hostname, s.UID, s.OS, s.Arch)
 }
 
 //go:embed green_circle_icon_32.png
