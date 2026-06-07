@@ -47,6 +47,10 @@ type AppInfo struct {
 	Version   string
 }
 
+type Reporter interface {
+	Reporter() string
+}
+
 func (a AppInfo) Uptime() string {
 	duration := time.Since(a.StartTime).Round(time.Second)
 	return duration.String()
@@ -65,6 +69,30 @@ func (c CheckResult) StatusLabel() string {
 		return "🟢 " + c.URL
 	}
 	return "🔴 " + c.URL
+}
+
+func (a AppInfo) Reporter() string {
+	return fmt.Sprintf("[APP] %s | Uptime: %s", a.Version, a.Uptime())
+}
+
+func (s SystemInfo) Reporter() string {
+	return fmt.Sprintf("[SYS] %s", s.Summary())
+}
+
+// Polymorphic function to print a reporter
+func printReporter(r Reporter) {
+	fmt.Printf(">> %s\n", r.Reporter())
+}
+
+// Print Slice of reporters
+func printAllReports(reporters []Reporter) {
+	fmt.Println("=== Startup Report ===")
+
+	for _, r := range reporters {
+		fmt.Printf(">> %s\n", r.Reporter())
+	}
+
+	fmt.Println("==================")
 }
 
 //go:embed green_circle_icon_32.png
@@ -109,6 +137,17 @@ func main() {
 		StartTime: time.Now(),
 		Version:   version,
 	}
+
+	info, err := getSystemInfo()
+
+	if err != nil {
+		fmt.Printf("Error getting system info: %s%v%s\n", colorRed, err, colorReset)
+		logger.Log(logger.LevelError, fmt.Sprintf("Error getting system info: %s", err))
+		systray.Quit()
+		return
+	}
+
+	printAllReports([]Reporter{app, info})
 
 	systray.Run(func() {
 		onReady(app)
@@ -175,7 +214,7 @@ func onReady(app AppInfo) {
 
 			fmt.Printf("=== System Monitor (Last update: %s) ===\n\n", time.Now().Format(time.RFC3339))
 
-			fmt.Printf("App: \t\t%s\n", app.String())
+			fmt.Printf("App: \t\t%s\n", app)
 
 			fmt.Printf("System: \t%s\n", info.Summary())
 
