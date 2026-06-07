@@ -48,7 +48,7 @@ type AppInfo struct {
 }
 
 type Reporter interface {
-	Reporter() string
+	Report() string
 }
 
 func (a AppInfo) Uptime() string {
@@ -71,17 +71,17 @@ func (c CheckResult) StatusLabel() string {
 	return "🔴 " + c.URL
 }
 
-func (a AppInfo) Reporter() string {
+func (a AppInfo) Report() string {
 	return fmt.Sprintf("[APP] %s | Uptime: %s", a.Version, a.Uptime())
 }
 
-func (s SystemInfo) Reporter() string {
+func (s SystemInfo) Report() string {
 	return fmt.Sprintf("[SYS] %s", s.Summary())
 }
 
 // Polymorphic function to print a reporter
 func printReporter(r Reporter) {
-	fmt.Printf(">> %s\n", r.Reporter())
+	fmt.Printf(">> %s\n", r.Report())
 }
 
 // Print Slice of reporters
@@ -89,7 +89,7 @@ func printAllReports(reporters []Reporter) {
 	fmt.Println("=== Startup Report ===")
 
 	for _, r := range reporters {
-		fmt.Printf(">> %s\n", r.Reporter())
+		printReporter(r)
 	}
 
 	fmt.Println("==================")
@@ -143,7 +143,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error getting system info: %s%v%s\n", colorRed, err, colorReset)
 		logger.Log(logger.LevelError, fmt.Sprintf("Error getting system info: %s", err))
-		systray.Quit()
 		return
 	}
 
