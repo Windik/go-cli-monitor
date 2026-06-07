@@ -79,17 +79,12 @@ func (s SystemInfo) Report() string {
 	return fmt.Sprintf("[SYS] %s", s.Summary())
 }
 
-// Polymorphic function to print a reporter
-func printReporter(r Reporter) {
-	fmt.Printf(">> %s\n", r.Report())
-}
-
 // Print Slice of reporters
 func printAllReports(reporters []Reporter) {
 	fmt.Println("=== Startup Report ===")
 
 	for _, r := range reporters {
-		printReporter(r)
+		fmt.Printf(">> %s\n", r.Report())
 	}
 
 	fmt.Println("==================")
