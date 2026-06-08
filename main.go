@@ -47,6 +47,14 @@ type AppInfo struct {
 	Version   string
 }
 
+type NetworkStats struct {
+	Target      string
+	TotalChecks int
+	UpCount     int
+	DownCount   int
+	LastCheck   time.Time
+}
+
 type Reporter interface {
 	Report() string
 }
@@ -79,6 +87,32 @@ func (s SystemInfo) Report() string {
 	return fmt.Sprintf("[SYS] %s", s.Summary())
 }
 
+func (n *NetworkStats) RecordCheck(isUp bool) {
+	n.TotalChecks++
+	if isUp {
+		n.UpCount++
+	} else {
+		n.DownCount++
+	}
+	n.LastCheck = time.Now()
+}
+
+func (n NetworkStats) SuccessRate() float64 {
+	if n.TotalChecks == 0 {
+		return 0
+	}
+
+	return float64(n.UpCount) / float64(n.TotalChecks)
+}
+
+func (n NetworkStats) LastCheckAgo() string {
+	if n.LastCheck.IsZero() {
+		return "never"
+	}
+
+	return fmt.Sprintf("%s", time.Since(n.LastCheck).Round(time.Second))
+}
+
 // Print Slice of reporters
 func printAllReports(reporters []Reporter) {
 	fmt.Println("=== Startup Report ===")
@@ -88,6 +122,11 @@ func printAllReports(reporters []Reporter) {
 	}
 
 	fmt.Println("==================")
+}
+
+func (n NetworkStats) Report() string {
+	return fmt.Sprintf("[NET] \t%s | Success Rate: %.2f%% | Last Check: %s",
+		n.Target, n.SuccessRate()*100, n.LastCheckAgo())
 }
 
 //go:embed green_circle_icon_32.png
@@ -162,8 +201,13 @@ func onReady(app AppInfo) {
 	systray.SetIcon(iconGreen)
 	systray.SetTitle(cfg.DefaultTitle)
 
-	// Hostname
+	// System Info
 	info, err := getSystemInfo()
+	stats := make([]NetworkStats, len(cfg.Targets))
+
+	for i, target := range cfg.Targets {
+		stats[i] = NetworkStats{Target: target}
+	}
 
 	if err != nil {
 		fmt.Printf("Error getting hostname: %s%v%s\n", colorRed, err, colorReset)
