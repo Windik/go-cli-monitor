@@ -102,7 +102,7 @@ func (n NetworkStats) SuccessRate() float64 {
 		return 0
 	}
 
-	return float64(n.UpCount) / float64(n.TotalChecks)
+	return float64(n.UpCount) / float64(n.TotalChecks) * 100
 }
 
 func (n NetworkStats) LastCheckAgo() string {
@@ -126,7 +126,7 @@ func printAllReports(reporters []Reporter) {
 
 func (n NetworkStats) Report() string {
 	return fmt.Sprintf("[NET] \t%s | Success Rate: %.2f%% | Last Check: %s",
-		n.Target, n.SuccessRate()*100, n.LastCheckAgo())
+		n.Target, n.SuccessRate(), n.LastCheckAgo())
 }
 
 //go:embed green_circle_icon_32.png
@@ -180,7 +180,13 @@ func main() {
 		return
 	}
 
-	printAllReports([]Reporter{app, info})
+	reporters := []Reporter{app, info}
+
+	for _, target := range cfg.Targets {
+		reporters = append(reporters, NetworkStats{Target: target})
+	}
+
+	printAllReports(reporters)
 
 	systray.Run(func() {
 		onReady(app)
@@ -278,6 +284,12 @@ func onReady(app AppInfo) {
 							upCount++
 						}
 						targetItem.Item.SetTitle(res.StatusLabel())
+					}
+				}
+
+				for j := range stats {
+					if stats[j].Target == res.URL {
+						stats[j].RecordCheck(res.IsUp)
 					}
 				}
 			}
