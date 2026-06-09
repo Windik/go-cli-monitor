@@ -19,6 +19,14 @@ const (
 // 2. Имя единого файла логов
 const LogFileName = "monitor.log"
 
+func formatLogLine(level LogLevel, message string) string {
+	return fmt.Sprintf("%s [%s] %s\n",
+		time.Now().Format("2006-01-02 15:04:05"),
+		level,
+		message,
+	)
+}
+
 // 3. Универсальная функция для записи ЛЮБОГО уровня лога
 func Log(level LogLevel, message string) {
 	// Открываем файл. Флаги говорят: дописывать в конец (APPEND) и создать, если нет (CREATE)
@@ -30,15 +38,12 @@ func Log(level LogLevel, message string) {
 	}
 	defer f.Close()
 
-	// Формируем строку: подставляем текущее время, динамический уровень [%s] и само сообщение
-	logLine := fmt.Sprintf("%s [%s] %s\n",
-		time.Now().Format("2006-01-02 15:04:05"),
-		level,
-		message,
-	)
-
 	// Записываем строку в файл
-	if _, err := f.WriteString(logLine); err != nil {
+	if _, err := f.WriteString(formatLogLine(level, message)); err != nil {
 		fmt.Printf("Can't write to log file: %v\n", err)
 	}
+}
+
+func GetLogPath() string {
+	return LogFileName
 }

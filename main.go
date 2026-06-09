@@ -155,6 +155,8 @@ func main() {
 
 	logger.Log(logger.LevelInfo, "Config loaded")
 
+	fmt.Printf("Log: \t\t%s\n", logger.GetLogPath())
+
 	fmt.Printf("Config loaded: %v\n", cfg)
 	fmt.Printf("Check interval: %d\n", cfg.CheckInterval)
 	fmt.Printf("Network monitoring targets: %v\n", cfg.Targets)
