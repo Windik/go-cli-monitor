@@ -344,7 +344,7 @@ func clearScreen() {
 func checkNetworkAndReturn(url string) bool {
 	// Create client with timeout
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: time.Duration(cfg.HTTPTimeout) * time.Second,
 	}
 
 	// Make request

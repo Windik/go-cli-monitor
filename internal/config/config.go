@@ -11,6 +11,7 @@ type Config struct {
 	CheckInterval int      `mapstructure:"check_interval"`
 	Targets       []string `mapstructure:"targets"`
 	DefaultTitle  string   `mapstructure:"default_title"`
+	HTTPTimeout   int      `mapstructure:"http_timeout"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -21,6 +22,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("check_interval", 5)
 	viper.SetDefault("targets", []string{"https://google.com"})
 	viper.SetDefault("default_title", "CLI Monitor")
+	viper.SetDefault("http_timeout", 5)
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
