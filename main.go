@@ -11,6 +11,7 @@ import (
 
 	"go-cli-monitor/internal/config"
 	"go-cli-monitor/internal/logger"
+	"go-cli-monitor/internal/stats"
 
 	"github.com/getlantern/systray"
 )
@@ -47,14 +48,6 @@ type AppInfo struct {
 	Version   string
 }
 
-type NetworkStats struct {
-	Target      string
-	TotalChecks int
-	UpCount     int
-	DownCount   int
-	LastCheck   time.Time
-}
-
 type Reporter interface {
 	Report() string
 }
@@ -87,32 +80,6 @@ func (s SystemInfo) Report() string {
 	return fmt.Sprintf("[SYS] %s", s.Summary())
 }
 
-func (n *NetworkStats) RecordCheck(isUp bool) {
-	n.TotalChecks++
-	if isUp {
-		n.UpCount++
-	} else {
-		n.DownCount++
-	}
-	n.LastCheck = time.Now()
-}
-
-func (n NetworkStats) SuccessRate() float64 {
-	if n.TotalChecks == 0 {
-		return 0
-	}
-
-	return float64(n.UpCount) / float64(n.TotalChecks) * 100
-}
-
-func (n NetworkStats) LastCheckAgo() string {
-	if n.LastCheck.IsZero() {
-		return "never"
-	}
-
-	return fmt.Sprintf("%s", time.Since(n.LastCheck).Round(time.Second))
-}
-
 // Print Slice of reporters
 func printAllReports(reporters []Reporter) {
 	fmt.Println("=== Startup Report ===")
@@ -122,11 +89,6 @@ func printAllReports(reporters []Reporter) {
 	}
 
 	fmt.Println("==================")
-}
-
-func (n NetworkStats) Report() string {
-	return fmt.Sprintf("[NET] \t%s | Success Rate: %.2f%% | Last Check: %s",
-		n.Target, n.SuccessRate(), n.LastCheckAgo())
 }
 
 //go:embed green_circle_icon_32.png
@@ -185,7 +147,7 @@ func main() {
 	reporters := []Reporter{app, info}
 
 	for _, target := range cfg.Targets {
-		reporters = append(reporters, NetworkStats{Target: target})
+		reporters = append(reporters, stats.NetworkStats{Target: target})
 	}
 
 	printAllReports(reporters)
@@ -211,10 +173,10 @@ func onReady(app AppInfo) {
 
 	// System Info
 	info, err := getSystemInfo()
-	stats := make([]NetworkStats, len(cfg.Targets))
+	networkStats := make([]stats.NetworkStats, len(cfg.Targets))
 
 	for i, target := range cfg.Targets {
-		stats[i] = NetworkStats{Target: target}
+		networkStats[i] = stats.NetworkStats{Target: target}
 	}
 
 	if err != nil {
@@ -289,9 +251,9 @@ func onReady(app AppInfo) {
 					}
 				}
 
-				for j := range stats {
-					if stats[j].Target == res.URL {
-						stats[j].RecordCheck(res.IsUp)
+				for j := range networkStats {
+					if networkStats[j].Target == res.URL {
+						networkStats[j].RecordCheck(res.IsUp)
 					}
 				}
 			}
