@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -258,9 +259,7 @@ func onReady(app AppInfo) {
 				go func(url string) {
 					isUp, err := checkNetworkAndReturn(url)
 
-					if err != nil {
-						logger.Log(logger.LevelError, err.Error())
-					}
+					handleCheckError(err)
 
 					resultsChan <- CheckResult{URL: url, IsUp: isUp}
 				}(targetItem.URL)
@@ -344,7 +343,8 @@ func checkNetworkAndReturn(url string) (bool, error) {
 		errorMessage := fmt.Sprintf("Connection for url - %s [DOWN] - [ERROR] %v", url, err)
 		logger.Log(logger.LevelError, errorMessage)
 
-		return false, &NetworkError{URL: url, Message: err.Error()}
+		wrapped := fmt.Errorf("network check for %s: %w", url, err)
+		return false, wrapped
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -394,4 +394,23 @@ func getSystemInfo() (SystemInfo, error) {
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
 	}, nil
+}
+
+func handleCheckError(err error) {
+	if err == nil {
+		return
+	}
+
+	// errors.As — извлекает конкретный тип из цепочки обёрток
+	var netErr *NetworkError
+	if errors.As(err, &netErr) {
+		fmt.Printf("%s[NETWORK ERROR]%s URL: %s — %s\n",
+			colorRed, colorReset, netErr.URL, netErr.Message)
+		logger.Log(logger.LevelError, netErr.Error())
+		return
+	}
+
+	// Общий случай
+	fmt.Printf("%s[ERROR]%s %v\n", colorRed, colorReset, err)
+	logger.Log(logger.LevelError, err.Error())
 }
