@@ -1,9 +1,12 @@
 package stats
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+var ErrEmptyTarget = errors.New("target cannot be empty")
 
 type NetworkStats struct {
 	Target      string
@@ -42,4 +45,12 @@ func (n NetworkStats) LastCheckAgo() string {
 func (n NetworkStats) Report() string {
 	return fmt.Sprintf("[NET] \t%s | Success Rate: %.2f%% | Last Check: %s",
 		n.Target, n.SuccessRate(), n.LastCheckAgo())
+}
+
+func New(target string) (*NetworkStats, error) {
+	if target == "" {
+		return nil, ErrEmptyTarget
+	}
+
+	return &NetworkStats{Target: target}, nil
 }

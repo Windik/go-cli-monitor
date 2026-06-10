@@ -147,7 +147,14 @@ func main() {
 	reporters := []Reporter{app, info}
 
 	for _, target := range cfg.Targets {
-		reporters = append(reporters, stats.NetworkStats{Target: target})
+		ns, err := stats.New(target)
+
+		if err != nil {
+			logger.Log(logger.LevelError, fmt.Sprintf("invalid target: %v", err))
+			continue
+		}
+
+		reporters = append(reporters, *ns)
 	}
 
 	printAllReports(reporters)
@@ -176,7 +183,14 @@ func onReady(app AppInfo) {
 	networkStats := make([]stats.NetworkStats, len(cfg.Targets))
 
 	for i, target := range cfg.Targets {
-		networkStats[i] = stats.NetworkStats{Target: target}
+		ns, err := stats.New(target)
+
+		if err != nil {
+			logger.Log(logger.LevelError, fmt.Sprintf("invalid target: %v", err))
+			continue
+		}
+
+		networkStats[i] = *ns
 	}
 
 	if err != nil {
