@@ -343,9 +343,12 @@ func checkNetworkAndReturn(url string) (bool, error) {
 		errorMessage := fmt.Sprintf("Connection for url - %s [DOWN] - [ERROR] %v", url, err)
 		logger.Log(logger.LevelError, errorMessage)
 
-		wrapped := fmt.Errorf("network check for %s: %w", url, err)
-		return false, wrapped
+		netErr := &NetworkError{URL: url, Message: err.Error()}
+		return false, fmt.Errorf("network check: %w", netErr)
+
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return false, &NetworkError{
@@ -353,8 +356,6 @@ func checkNetworkAndReturn(url string) (bool, error) {
 			Message: fmt.Sprintf("unexpected status %d", resp.StatusCode),
 		}
 	}
-
-	defer resp.Body.Close()
 
 	fmt.Printf("Connection for url - %s is \t%s[UP]%s (Status: %s)\n", url, colorGreen, colorReset, resp.Status)
 
