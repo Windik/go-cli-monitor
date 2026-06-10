@@ -48,8 +48,17 @@ type AppInfo struct {
 	Version   string
 }
 
+type NetworkError struct {
+	URL     string
+	Message string
+}
+
 type Reporter interface {
 	Report() string
+}
+
+func (e *NetworkError) Error() string {
+	return fmt.Sprintf("connection to %s failed: %s", e.URL, e.Message)
 }
 
 func (a AppInfo) Uptime() string {
@@ -247,7 +256,11 @@ func onReady(app AppInfo) {
 
 			for _, targetItem := range menuItems {
 				go func(url string) {
-					isUp := checkNetworkAndReturn(url)
+					isUp, err := checkNetworkAndReturn(url)
+
+					if err != nil {
+						logger.Log(logger.LevelError, err.Error())
+					}
 
 					resultsChan <- CheckResult{URL: url, IsUp: isUp}
 				}(targetItem.URL)
@@ -317,7 +330,7 @@ func clearScreen() {
 	}
 }
 
-func checkNetworkAndReturn(url string) bool {
+func checkNetworkAndReturn(url string) (bool, error) {
 	// Create client with timeout
 	client := &http.Client{
 		Timeout: time.Duration(cfg.HTTPTimeout) * time.Second,
@@ -331,14 +344,21 @@ func checkNetworkAndReturn(url string) bool {
 		errorMessage := fmt.Sprintf("Connection for url - %s [DOWN] - [ERROR] %v", url, err)
 		logger.Log(logger.LevelError, errorMessage)
 
-		return false
+		return false, &NetworkError{URL: url, Message: err.Error()}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return false, &NetworkError{
+			URL:     url,
+			Message: fmt.Sprintf("unexpected status %d", resp.StatusCode),
+		}
 	}
 
 	defer resp.Body.Close()
 
 	fmt.Printf("Connection for url - %s is \t%s[UP]%s (Status: %s)\n", url, colorGreen, colorReset, resp.Status)
 
-	return resp.StatusCode == http.StatusOK
+	return true, nil
 }
 
 func checkPath(path string) {
