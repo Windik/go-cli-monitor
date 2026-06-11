@@ -265,23 +265,30 @@ func onReady(app AppInfo) {
 				}(targetItem.URL)
 			}
 
+			timeout := time.Duration(cfg.HTTPTimeout+2) * time.Second
+
 			for i := 0; i < targetsCount; i++ {
-				res := <-resultsChan // Read one result from channel
-
-				for _, targetItem := range menuItems {
-					if targetItem.URL == res.URL {
-						if res.IsUp {
-							upCount++
+				select {
+				case res := <-resultsChan:
+					for _, targetItem := range menuItems {
+						if targetItem.URL == res.URL {
+							if res.IsUp {
+								upCount++
+							}
+							targetItem.Item.SetTitle(res.StatusLabel())
 						}
-						targetItem.Item.SetTitle(res.StatusLabel())
 					}
+
+					for j := range networkStats {
+						if networkStats[j].Target == res.URL {
+							networkStats[j].RecordCheck(res.IsUp)
+						}
+					}
+				case <-time.After(timeout):
+					fmt.Printf("%s[TIMEOUT]%s waiting for check results\n", colorYellow, colorReset)
+					logger.Log(logger.LevelWarning, "timeout waiting for check results")
 				}
 
-				for j := range networkStats {
-					if networkStats[j].Target == res.URL {
-						networkStats[j].RecordCheck(res.IsUp)
-					}
-				}
 			}
 
 			if upCount == targetsCount {
